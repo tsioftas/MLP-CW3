@@ -2,7 +2,8 @@ from modulefinder import Module
 import data_utils as du
 
 import torch
-from torch.nn import Sequential, Conv2d, BatchNorm2d, ReLU, MaxPool2d, Linear
+from torch.nn import Sequential, Conv2d, BatchNorm2d, ReLU, MaxPool2d, Linear, CrossEntropyLoss
+from torch.optim import Adam
 
 class SimpleCNN(Module):
 
@@ -34,12 +35,23 @@ class SimpleCNN(Module):
         return x
 
 def run_cnn(hidden_layers):
+    # Get the data
     data: du.Data = du.get_all_data()
     train_x = data.get['train_x']
     train_y = data.get['train_y']
     dev_x = data.get['dev_in_x'].append(data.get['dev_out_x'])
     dev_y = data.get['dev_in_y'].append(data.get['dev_out_y'])
+    # Define the model
     model = SimpleCNN(hidden_layers)
+    print(f"Model:\n{model}")
+    # Define the optimizer
+    optimizer = Adam(model.parameters(), lr=0.07)
+    # Define the loss function
+    criterion = CrossEntropyLoss()
+    # Check if GPU is available
+    if torch.cuda.is_available():
+        model = model.cuda()
+        criterion = criterion.cuda()
 
     # convert to tensors
     train_x = torch.from_numpy(train_x)
