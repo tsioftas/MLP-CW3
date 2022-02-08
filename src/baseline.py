@@ -35,10 +35,10 @@ class SimpleCNN(Module):
 
 def run_cnn(hidden_layers):
     data: du.Data = du.get_all_data()
-    train_x = data.get['train']
-    train_y = train_x['fact_temperature']
-    train_x = train_x[train_x.columns.drop(list(train_x.filter(regex='fact_*')))]
-    train_x.drop('climate', inplace=True)
+    train_x = data.get['train_x']
+    train_y = data.get['train_y']
+    dev_x = data.get['dev_in_x'].append(data.get['dev_out_x'])
+    dev_y = data.get['dev_in_y'].append(data.get['dev_out_y'])
     model = SimpleCNN(hidden_layers)
 
     # convert to tensors
