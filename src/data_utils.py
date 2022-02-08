@@ -15,12 +15,11 @@ def get_data(filename: str) -> pd.DataFrame:
     return df
 
 def get_all_data() -> Data:
-    files = ['train', 'dev_in', 'dev_out']
+    files = ['shifts_canonical_train', 'shifts_canonical_dev_in', 'shifts_canonical_dev_out']
     data = Data()
     for file in files:
         df = get_data(file+".csv")
         data.get[file+"_y"] = df['fact_temperature']
-        df = df.drop(df.filter(regex='fact_*').columns)
-        df = df.drop("climate")
+        df = df[df.columns.drop(['climate'] + list(df.filter(regex='fact_')))]
         data.get[file+"_x"] = df
     return data

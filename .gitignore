@@ -1,2 +1,4 @@
+.ipynb_checkpoints/*
+baseline-models/*
 data/*
 *.pyc

@@ -1,9 +1,9 @@
-from modulefinder import Module
-import data_utils as du
+import src.data_utils as du
 
 import torch
-from torch.nn import Sequential, Conv2d, BatchNorm2d, ReLU, MaxPool2d, Linear, CrossEntropyLoss
+from torch.nn import Sequential, Conv2d, BatchNorm2d, ReLU, MaxPool2d, Linear, CrossEntropyLoss, Module
 from torch.optim import Adam
+from collections import OrderedDict
 
 class SimpleCNN(Module):
 
@@ -12,12 +12,15 @@ class SimpleCNN(Module):
         self.input_dim = 127
         self.hidden_dim = 70
         self.output_dim = 1
-        seq = []
+        seq = OrderedDict()
         for i in range(layers):
-            seq.append(Conv2d(self.input_dim, self.hidden_dim))
-            seq.append(BatchNorm2d(self.hidden_dim))
-            seq.append(ReLU(inplace=True))
-            seq.append(MaxPool2d())
+            if i==0:
+                seq[f"conv_{i}"] = Conv2d(self.input_dim, self.hidden_dim, kernel_size=3, stride=1, padding = 1)
+            else:
+                seq[f"conv_{i}"] = Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=3, stride=1, padding = 1)
+            seq[f"batchnorm_{i}"]  = BatchNorm2d(self.hidden_dim)
+            seq[f"relu_{i}"] = ReLU(inplace=True)
+            seq[f"maxpool_{i}"] = MaxPool2d(kernel_size=2, stride=2)
 
         self.cnn_layers = Sequential(
             seq
@@ -37,10 +40,10 @@ class SimpleCNN(Module):
 def run_cnn(hidden_layers):
     # Get the data
     data: du.Data = du.get_all_data()
-    train_x = data.get['train_x']
-    train_y = data.get['train_y']
-    dev_x = data.get['dev_in_x'].append(data.get['dev_out_x'])
-    dev_y = data.get['dev_in_y'].append(data.get['dev_out_y'])
+    train_x = data.get['shifts_canonical_train_x']
+    train_y = data.get['shifts_canonical_train_y']
+    dev_x = data.get['shifts_canonical_dev_in_x'].append(data.get['shifts_canonical_dev_out_x'])
+    dev_y = data.get['shifts_canonical_dev_in_y'].append(data.get['shifts_canonical_dev_out_y'])
     # Define the model
     model = SimpleCNN(hidden_layers)
     print(f"Model:\n{model}")
