@@ -1,5 +1,6 @@
 import data_utils as du
 
+import numpy as np
 import os
 from matplotlib import pyplot as plt
 import torch
@@ -18,10 +19,10 @@ class SimpleCNN(Module):
         seq = OrderedDict()
         for i in range(layers):
             if i==0:
-                seq[f"conv_{i}"] = Conv2d(self.input_dim, self.hidden_dim, kernel_size=5, dtype=float, padding=3)
+                seq[f"conv_{i}"] = Conv2d(self.input_dim, self.hidden_dim, kernel_size=5, dtype=np.float32, padding=3)
             else:
-                seq[f"conv_{i}"] = Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=5, dtype=float, padding=3)
-            #seq[f"batchnorm_{i}"]  = BatchNorm2d(self.hidden_dim, dtype=float)
+                seq[f"conv_{i}"] = Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=5, dtype=np.float32, padding=3)
+            #seq[f"batchnorm_{i}"]  = BatchNorm2d(self.hidden_dim, dtype=np.float32)
             seq[f"relu_{i}"] = ReLU(inplace=True)
             #seq[f"maxpool_{i}"] = MaxPool2d(kernel_size=2, stride=2)
 
@@ -30,7 +31,7 @@ class SimpleCNN(Module):
         )
 
         self.linear_layers = Sequential(
-            Linear(self.hidden_dim*300, self.output_dim, dtype=float)
+            Linear(self.hidden_dim*300, self.output_dim, dtype=np.float32)
         )
 
     # Defining the forward pass    

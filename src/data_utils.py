@@ -25,7 +25,7 @@ def get_all_data() -> Data:
         df = get_data(file+".csv")
         df.fillna(value=-1, inplace=True)
         data.get[file+"_y"] = df['fact_temperature']
-        df = df[df.columns.drop(['climate'] + list(df.filter(regex='fact_')))].astype(float)
+        df = df[df.columns.drop(['climate'] + list(df.filter(regex='fact_')))].astype(np.float32)
         data.get[file+"_x"] = df
     return data
 
