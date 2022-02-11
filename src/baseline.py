@@ -1,5 +1,6 @@
 import data_utils as du
 
+import os
 from matplotlib import pyplot as plt
 import torch
 from torch.nn import Sequential, Conv2d, BatchNorm2d, ReLU, MaxPool2d, Linear, MSELoss, Module
@@ -127,6 +128,10 @@ if __name__ == "__main__":
     m = make_cnn(3, E)
     plt.plot(epochs, train_losses, label="train_loss")
     plt.plot(epochs, val_losses, label="val_loss")
+    c = 0
+    while os.path.isfile(f"plots/plot_{c}.svg"):
+        c += 1
+    plt.savefig(f"plot_{c}.svg")
     plt.show()
 
     
