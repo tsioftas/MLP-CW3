@@ -22,7 +22,7 @@ def get_all_data() -> Data:
     #files = ['shifts_canonical_dev_in', 'shifts_canonical_dev_out', 'shifts_canonical_eval_in']
     data = Data()
     for file in files:
-        df = get_data(file+".csv").head(10000)
+        df = get_data(file+".csv")
         df.fillna(value=-1, inplace=True)
         data.get[file+"_y"] = df['fact_temperature']
         df = df[df.columns.drop(['climate'] + list(df.filter(regex='fact_')))].astype(float)
