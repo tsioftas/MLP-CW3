@@ -63,7 +63,7 @@ class Dataset:
             }
             return dct
 
-def train(epoch: int, model: SimpleCNN,  data: du.Data, criterion,
+def train(epoch: int, model: SimpleCNN, criterion,
             train_dataloader: DataLoader, valid_dataloader: DataLoader):
     # Define the optimizer
     optimizer = Adam(model.parameters(), lr=0.00001)
@@ -112,16 +112,44 @@ def train(epoch: int, model: SimpleCNN,  data: du.Data, criterion,
     if epoch%2 == 0:
         # printing the validation loss
         print('Epoch : ',epoch+1, '\t', 'loss :', valid_loss_avg)
+    return
 
-def make_cnn(hidden_layers, E):
+def evaluate(epoch: int, model: SimpleCNN, criterion,
+            eval_dataloader: DataLoader): 
+    # Validation data
+    model.eval()
+    valid_loss_avg = 0
+    for eval_data in eval_dataloader:
+        # getting the validation set
+        x_eval, y_eval = Variable(eval_data['x']), Variable(eval_data['y']) # change variable name dev -> val
+        if torch.cuda.is_available():
+            x_eval = x_eval.cuda()
+            y_eval = y_eval.cuda()
+        output_eval = model(x_eval).squeeze()
+        if output_eval.shape != y_eval.shape:
+            print("OPPAS_2")
+        valid_loss = criterion(output_eval, y_eval)
+        valid_loss_avg += valid_loss.item()
+    valid_loss_avg /= len(eval_dataloader)
+    val_losses.append(valid_loss_avg)
+
+    if epoch%2 == 0:
+        # printing the validation loss
+        print('Epoch : ',epoch+1, '\t', 'loss :', valid_loss_avg)
+    return
+
+
+def make_cnn(hidden_layers: int, E) -> SimpleCNN:
     # Get the data
     print("Getting data...")
     data: du.Data = du.get_all_data()
     # extract data
-    train_x = data.get['shifts_canonical_eval_in_x']
-    train_y = data.get['shifts_canonical_eval_in_y']
+    train_x = data.get['shifts_canonical_train_x']
+    train_y = data.get['shifts_canonical_train_y']
     val_x = data.get['shifts_canonical_dev_in_x'].append(data.get['shifts_canonical_dev_out_x'])
     val_y = data.get['shifts_canonical_dev_in_y'].append(data.get['shifts_canonical_dev_out_y'])
+    evl_x = data.get['shifts_canonical_eval_in_x'].append(data.get['shifts_canonical_eval_out_x'])
+    evl_y = data.get['shifts_canonical_eval_in_y'].append(data.get['shifts_canonical_eval_out_y'])
     N_SAMPLES_TRAIN, D = train_x.shape
     # convert from pandas to numpy
     train_x = train_x.to_numpy().reshape(N_SAMPLES_TRAIN, D, 1)
@@ -134,9 +162,10 @@ def make_cnn(hidden_layers, E):
     # numpy to pytorch
     train_dataset = Dataset(train_x, train_y)
     valid_dataset = Dataset(val_x, val_y)
+    eval_dataset = Dataset(evl_x, evl_y)
     train_data_loader = DataLoader(train_dataset, BATCH_SIZE, shuffle=True)
     valid_data_loader = DataLoader(valid_dataset, BATCH_SIZE, shuffle=False)
-    
+    eval_data_loader = DataLoader(eval_dataset, BATCH_SIZE, shuffle=False)
     # Define model
     print("Defining model...")
     model = SimpleCNN(hidden_layers, D)
@@ -152,18 +181,22 @@ def make_cnn(hidden_layers, E):
     epochs = [i for i in range(E)]
     print(f"Strarted training for {E} epochs...")
     for epoch in epochs:
-            train(epoch, model, data, criterion, train_data_loader, valid_data_loader)  
+        train(epoch, model, criterion, train_data_loader, valid_data_loader)
+        evaluate(epoch, model, criterion, eval_data_loader)
     return model  
 
  
 if __name__ == "__main__":
     train_losses = []
     val_losses = []
+    eval_losses = []
     E=3
     epochs = [i for i in range(E)]
-    m = make_cnn(3, E)
+    the_model = make_cnn(3, E)
+    
     plt.plot(epochs, train_losses, label="train_loss")
     plt.plot(epochs, val_losses, label="val_loss")
+    plt.plot(epochs, eval_losses, label="eval_loss")
     c = 0
     while os.path.isfile(f"plots/plot_{c}.svg"):
         c += 1
