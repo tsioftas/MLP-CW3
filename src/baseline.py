@@ -1,27 +1,33 @@
 import data_utils as du
+from constants import BATCH_SIZE
 
+import math
 import numpy as np
 import os
 from matplotlib import pyplot as plt
 import torch
-from torch.nn import Sequential, Conv2d, BatchNorm2d, ReLU, MaxPool2d, Linear, MSELoss, Module
+from torch.nn import Sequential, Conv1d, BatchNorm2d, ReLU, MaxPool2d, Linear, MSELoss, Module
 from torch.optim import Adam
 from torch.autograd import Variable
+from torch.utils.data import DataLoader
 from collections import OrderedDict
 
 class SimpleCNN(Module):
 
-    def __init__(self, layers):
+    def __init__(self, layers, D_in):
         super(SimpleCNN, self).__init__()
-        self.input_dim = 1
-        self.hidden_dim = 10
         self.output_dim = 1
+
+        self.in_channels_1st = D_in
+        self.in_channels_hidden = 512
+        self.out_channels_1st = self.in_channels_hidden
+        self.out_channels_hidden = 512
         seq = OrderedDict()
         for i in range(layers):
             if i==0:
-                seq[f"conv_{i}"] = Conv2d(self.input_dim, self.hidden_dim, kernel_size=5, dtype=float, padding=3)
+                seq[f"conv_{i}"] = Conv1d(self.in_channels_1st, self.out_channels_1st, kernel_size=5, dtype=torch.float, padding=2, bias=False)
             else:
-                seq[f"conv_{i}"] = Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=5, dtype=float, padding=3)
+                seq[f"conv_{i}"] = Conv1d(self.in_channels_hidden, self.out_channels_hidden, kernel_size=5, dtype=torch.float, padding=2, bias=True)
             #seq[f"batchnorm_{i}"]  = BatchNorm2d(self.hidden_dim, dtype=np.float32)
             seq[f"relu_{i}"] = ReLU(inplace=True)
             #seq[f"maxpool_{i}"] = MaxPool2d(kernel_size=2, stride=2)
@@ -31,7 +37,7 @@ class SimpleCNN(Module):
         )
 
         self.linear_layers = Sequential(
-            Linear(self.hidden_dim*300, self.output_dim, dtype=float)
+            Linear(self.out_channels_hidden, self.output_dim, dtype=torch.float)
         )
 
     # Defining the forward pass    
@@ -41,98 +47,159 @@ class SimpleCNN(Module):
         x = self.linear_layers(x)
         return x
 
-def train(epoch: int, model: SimpleCNN,  data: du.Data, criterion,
-            train_x, train_y, dev_x, dev_y):
-    model.train()
-    
-    
-    # getting the training set
-    x_train, y_train = Variable(train_x), Variable(train_y)
-    # getting the validation set
-    x_val, y_val = Variable(dev_x), Variable(dev_y) # change variable name dev -> val
-    # converting the data into GPU format
-    if torch.cuda.is_available():
-        x_train = x_train.cuda()
-        y_train = y_train.cuda()
-        x_val = x_val.cuda()
-        y_val = y_val.cuda()
+class Dataset:
+        def __init__(self, features, targets):
+            self.features = features
+            self.targets = targets
 
+        def __len__(self):
+            return (self.features.shape[0])
+
+        def __getitem__(self, idx):
+            dct = {
+                # TODO: Assuming dimensionality of data for 2d convolutional layer 
+                'x' : torch.tensor(self.features[idx, :], dtype=torch.float),
+                'y' : torch.tensor(self.targets[idx], dtype=torch.float)            
+            }
+            return dct
+
+def train(epoch: int, model: SimpleCNN, criterion,
+            train_dataloader: DataLoader, valid_dataloader: DataLoader):
     # Define the optimizer
     optimizer = Adam(model.parameters(), lr=0.00001)
-    # clearing the Gradients of the model parameters
-    optimizer.zero_grad()
+
+    # Training data
+    model.train()
+    train_loss_avg = 0
+    for train_data in train_dataloader:
+        # getting the training set
+        x_train, y_train = Variable(train_data['x']), Variable(train_data['y'])
+        # converting the data into GPU format
+        if torch.cuda.is_available():
+            x_train = x_train.cuda()
+            y_train = y_train.cuda()
+        # clearing the Gradients of the model parameters
+        optimizer.zero_grad()
+        # prediction for training and validation set
+        output_train = model(x_train).squeeze()
+        if output_train.shape != y_train.shape:
+            print("OPPAS")
+        train_loss = criterion(output_train, y_train)
+        train_loss.backward()
+        optimizer.step()
+
+        train_loss_avg += train_loss.item()
+    train_loss_avg /= len(train_dataloader)
+    train_losses.append(train_loss_avg)
     
-    # prediction for training and validation set
-    output_train = model(x_train).squeeze()
-    output_val = model(x_val).squeeze()
+    # Validation data
+    model.eval()
+    valid_loss_avg = 0
+    for valid_data in valid_dataloader:
+        # getting the validation set
+        x_val, y_val = Variable(valid_data['x']), Variable(valid_data['y']) # change variable name dev -> val
+        if torch.cuda.is_available():
+            x_val = x_val.cuda()
+            y_val = y_val.cuda()
+        output_val = model(x_val).squeeze()
+        if output_val.shape != y_val.shape:
+            print("OPPAS_2")
+        valid_loss = criterion(output_val, y_val)
+        valid_loss_avg += valid_loss.item()
+    valid_loss_avg /= len(valid_dataloader)
+    val_losses.append(valid_loss_avg)
 
-    # computing the training and validation loss
-    loss_train = criterion(output_train, y_train)
-    loss_val = criterion(output_val, y_val)
-    train_losses.append(loss_train.detach().numpy())
-    val_losses.append(loss_val.detach().numpy())
-
-    # computing the updated weights of all the model parameters
-    loss_train.backward()
-    optimizer.step()
-    tr_loss = loss_train.item()
     if epoch%2 == 0:
         # printing the validation loss
-        print('Epoch : ',epoch+1, '\t', 'loss :', loss_val)
+        print('Epoch : ',epoch+1, '\t', 'loss :', valid_loss_avg)
+    return
 
-def make_cnn(hidden_layers, E):
+def evaluate(epoch: int, model: SimpleCNN, criterion,
+            eval_dataloader: DataLoader): 
+    # Validation data
+    model.eval()
+    valid_loss_avg = 0
+    for eval_data in eval_dataloader:
+        # getting the validation set
+        x_eval, y_eval = Variable(eval_data['x']), Variable(eval_data['y']) # change variable name dev -> val
+        if torch.cuda.is_available():
+            x_eval = x_eval.cuda()
+            y_eval = y_eval.cuda()
+        output_eval = model(x_eval).squeeze()
+        if output_eval.shape != y_eval.shape:
+            print("OPPAS_2")
+        valid_loss = criterion(output_eval, y_eval)
+        valid_loss_avg += valid_loss.item()
+    valid_loss_avg /= len(eval_dataloader)
+    val_losses.append(valid_loss_avg)
+
+    if epoch%2 == 0:
+        # printing the validation loss
+        print('Epoch : ',epoch+1, '\t', 'loss :', valid_loss_avg)
+    return
+
+
+def make_cnn(hidden_layers: int, E) -> SimpleCNN:
     # Get the data
     print("Getting data...")
     data: du.Data = du.get_all_data()
-    # Define the model
+    # extract data
+    train_x = data.get['shifts_canonical_train_x']
+    train_y = data.get['shifts_canonical_train_y']
+    val_x = data.get['shifts_canonical_dev_in_x'].append(data.get['shifts_canonical_dev_out_x'])
+    val_y = data.get['shifts_canonical_dev_in_y'].append(data.get['shifts_canonical_dev_out_y'])
+    evl_x = data.get['shifts_canonical_eval_in_x'].append(data.get['shifts_canonical_eval_out_x'])
+    evl_y = data.get['shifts_canonical_eval_in_y'].append(data.get['shifts_canonical_eval_out_y'])
+    N_SAMPLES_TRAIN, D = train_x.shape
+    # convert from pandas to numpy
+    train_x = train_x.to_numpy().reshape(N_SAMPLES_TRAIN, D, 1)
+    train_y = train_y.to_numpy()
+    print(f"Training data features shape: {train_x.shape}")
+    N_SAMPLES_VALID, _ = val_x.shape
+    val_x = val_x.to_numpy().reshape(N_SAMPLES_VALID, D, 1)
+    val_y = val_y.to_numpy()
+    print(f"Validation data features shape: {val_x.shape}")
+    # numpy to pytorch
+    train_dataset = Dataset(train_x, train_y)
+    valid_dataset = Dataset(val_x, val_y)
+    eval_dataset = Dataset(evl_x, evl_y)
+    train_data_loader = DataLoader(train_dataset, BATCH_SIZE, shuffle=True)
+    valid_data_loader = DataLoader(valid_dataset, BATCH_SIZE, shuffle=False)
+    eval_data_loader = DataLoader(eval_dataset, BATCH_SIZE, shuffle=False)
+    # Define model
     print("Defining model...")
-    model = SimpleCNN(hidden_layers)
-    # Define the loss function
+    model = SimpleCNN(hidden_layers, D)
+    # and the loss function
     criterion = MSELoss()
     print(f"Model:\n{model}")
     # Check if GPU is available
     if torch.cuda.is_available():
         model = model.cuda()
         criterion = criterion.cuda()
-    # extract data
-    train_x = data.get['shifts_canonical_dev_in_x']
-    train_y = data.get['shifts_canonical_dev_in_y']
-    dev_x = data.get['shifts_canonical_dev_in_x'].append(data.get['shifts_canonical_dev_out_x'])
-    dev_y = data.get['shifts_canonical_dev_in_y'].append(data.get['shifts_canonical_dev_out_y'])
-    # convert data to tensors
-    # Add dummy variables (padding for convolution)
-    for i in range(3):
-        dev_x.insert(len(dev_x.columns), f"Dummy_var_{i}", [0 for _ in range(dev_x.shape[0])])
-        train_x.insert(len(train_x.columns), f"Dummy_var_{i}", [0 for _ in range(train_x.shape[0])])
-    N_SAMPLES, D = train_x.shape
-    D1 = 14
-    D2 = 9
-    assert D1*D2 == D, f"Have {D} features, cannot organize them in {D1} rows and {D2} columns!"
-    train_x = torch.from_numpy(train_x.to_numpy().reshape((N_SAMPLES, D1, D2))).unsqueeze(1)
-    train_y = torch.from_numpy(train_y.to_numpy())
-    N_SAMPLES, D = dev_x.shape
-    print(f"Shape: {dev_x.shape}")
-    dev_x = torch.from_numpy(dev_x.to_numpy().reshape((N_SAMPLES, D1, D2))).unsqueeze(1)
-    dev_y = torch.from_numpy(dev_y.to_numpy())
+    
+    # Start training
     epochs = [i for i in range(E)]
     print(f"Strarted training for {E} epochs...")
     for epoch in epochs:
-        train(epoch, model, data, criterion, train_x, train_y, dev_x, dev_y)  
+        train(epoch, model, criterion, train_data_loader, valid_data_loader)
+        evaluate(epoch, model, criterion, eval_data_loader)
     return model  
 
  
 if __name__ == "__main__":
     train_losses = []
     val_losses = []
-    E=30
+    eval_losses = []
+    E=3
     epochs = [i for i in range(E)]
-    m = make_cnn(3, E)
+    the_model = make_cnn(3, E)
+    
     plt.plot(epochs, train_losses, label="train_loss")
     plt.plot(epochs, val_losses, label="val_loss")
+    plt.plot(epochs, eval_losses, label="eval_loss")
     c = 0
     while os.path.isfile(f"plots/plot_{c}.svg"):
         c += 1
     plt.savefig(f"plot_{c}.svg")
     plt.show()
-
     
