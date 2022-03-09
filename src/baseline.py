@@ -19,9 +19,9 @@ class SimpleCNN(Module):
         seq = OrderedDict()
         for i in range(layers):
             if i==0:
-                seq[f"conv_{i}"] = Conv2d(self.input_dim, self.hidden_dim, kernel_size=5, dtype=np.float32, padding=3)
+                seq[f"conv_{i}"] = Conv2d(self.input_dim, self.hidden_dim, kernel_size=5, dtype=float, padding=3)
             else:
-                seq[f"conv_{i}"] = Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=5, dtype=np.float32, padding=3)
+                seq[f"conv_{i}"] = Conv2d(self.hidden_dim, self.hidden_dim, kernel_size=5, dtype=float, padding=3)
             #seq[f"batchnorm_{i}"]  = BatchNorm2d(self.hidden_dim, dtype=np.float32)
             seq[f"relu_{i}"] = ReLU(inplace=True)
             #seq[f"maxpool_{i}"] = MaxPool2d(kernel_size=2, stride=2)
@@ -31,7 +31,7 @@ class SimpleCNN(Module):
         )
 
         self.linear_layers = Sequential(
-            Linear(self.hidden_dim*300, self.output_dim, dtype=np.float32)
+            Linear(self.hidden_dim*300, self.output_dim, dtype=float)
         )
 
     # Defining the forward pass    
@@ -95,8 +95,8 @@ def make_cnn(hidden_layers, E):
         model = model.cuda()
         criterion = criterion.cuda()
     # extract data
-    train_x = data.get['shifts_canonical_train_x']
-    train_y = data.get['shifts_canonical_train_y']
+    train_x = data.get['shifts_canonical_dev_in_x']
+    train_y = data.get['shifts_canonical_dev_in_y']
     dev_x = data.get['shifts_canonical_dev_in_x'].append(data.get['shifts_canonical_dev_out_x'])
     dev_y = data.get['shifts_canonical_dev_in_y'].append(data.get['shifts_canonical_dev_out_y'])
     # convert data to tensors
