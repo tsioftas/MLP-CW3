@@ -391,7 +391,7 @@ NFOLDS = 5
 EARLY_STOPPING_STEPS = 10
 EARLY_STOP = False
 seed = 42
-n_comp = 40
+n_comp = 22
 
 feature_cols= x_train.columns.values.tolist()
 target_cols = ['fact_temperature']
