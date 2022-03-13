@@ -332,6 +332,22 @@ def pca_pre(tr, va, te, n_comp, feat_new):
     te2 = pd.DataFrame(pca.transform(te),columns=feat_new)
     return(tr2,va2,te2)
 
+def try_different_pca_comb(tr):
+    best_component = 0
+    best_variance = 0
+    for i in range(20,80):
+        pca = PCA(n_components=i, random_state=42)
+        principalComponents = pca.fit_transform(tr)
+        retainedVariance = round(sum(list(pca.explained_variance_ratio_))*100, 2)
+        print(i,retainedVariance)
+        if retainedVariance < best_variance:
+            best_variance = retainedVariance
+            best_component = i
+    print(best_component,best_variance)
+
+
+
+
 
 # In[ ]:
 
@@ -375,7 +391,6 @@ NFOLDS = 5
 EARLY_STOPPING_STEPS = 10
 EARLY_STOP = False
 seed = 42
-
 n_comp = 40
 
 feature_cols= x_train.columns.values.tolist()
@@ -402,6 +417,8 @@ x_train,ss     = norm_fit(x_train,True,'quan')
 x_valid_inDom  = norm_tra(x_valid_inDom,ss)
 x_valid_outDom = norm_tra(x_valid_outDom,ss)
 print('7')
+try_different_pca_comb(x_train)
+
 pca_feat = [f'pca_-{i}' for i in range(n_comp)]
 
 x_tr_pca,x_vainDom_pca,x_vaoutDom_pca = pca_pre(x_train, x_valid_inDom, x_valid_outDom, n_comp, pca_feat)
