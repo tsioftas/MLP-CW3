@@ -256,7 +256,7 @@ def main():
     # Define model based on data
     feature_cols= x_train.columns.values.tolist()
     target_cols = ['fact_temperature']
-    num_features=len(feature_cols) + n_comp
+    num_features=len(feature_cols)
     num_targets=len(target_cols)
     hidden_size=512
 
