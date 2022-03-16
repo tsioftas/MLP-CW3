@@ -2,6 +2,95 @@ import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class Model(nn.Module):
+    def __init__(self, num_features, num_targets, hidden_size):
+        super(Model, self).__init__()
+        cha_1 = 256 // 8
+        cha_2 = 512 // 8
+        cha_3 = 512 // 8
+
+        cha_1_reshape = int(hidden_size/cha_1)
+        cha_po_1 = int(hidden_size/cha_1/2)
+        cha_po_2 = int(hidden_size/cha_1/2/2) * cha_3
+
+        self.cha_1 = cha_1
+        self.cha_2 = cha_2
+        self.cha_3 = cha_3
+        self.cha_1_reshape = cha_1_reshape
+        self.cha_po_1 = cha_po_1
+        self.cha_po_2 = cha_po_2
+
+        self.batch_norm1 = nn.BatchNorm1d(num_features)
+        self.dropout1 = nn.Dropout(0.1)
+        self.dense1 = nn.utils.weight_norm(nn.Linear(num_features, hidden_size))
+
+        self.batch_norm_c1 = nn.BatchNorm1d(cha_1)
+        self.dropout_c1 = nn.Dropout(0.1)
+        self.conv1 = nn.utils.weight_norm(nn.Conv1d(cha_1,cha_2, kernel_size = 5, stride = 1, padding=2,  bias=False),dim=None)
+
+        self.ave_po_c1 = nn.AdaptiveAvgPool1d(output_size = cha_po_1)
+
+        self.batch_norm_c2 = nn.BatchNorm1d(cha_2)
+        self.dropout_c2 = nn.Dropout(0.1)
+        self.conv2 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_2, kernel_size = 3, stride = 1, padding=1, bias=True),dim=None)
+
+        self.batch_norm_c2_1 = nn.BatchNorm1d(cha_2)
+        self.dropout_c2_1 = nn.Dropout(0.3)
+        self.conv2_1 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_2, kernel_size = 3, stride = 1, padding=1, bias=True),dim=None)
+
+        self.batch_norm_c2_2 = nn.BatchNorm1d(cha_2)
+        self.dropout_c2_2 = nn.Dropout(0.2)
+        self.conv2_2 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_3, kernel_size = 5, stride = 1, padding=2, bias=True),dim=None)
+
+        self.max_po_c2 = nn.MaxPool1d(kernel_size=4, stride=2, padding=1)
+
+        self.flt = nn.Flatten()
+
+        self.batch_norm3 = nn.BatchNorm1d(cha_po_2)
+        self.dropout3 = nn.Dropout(0.2)
+        self.dense3 = nn.utils.weight_norm(nn.Linear(cha_po_2, num_targets))
+
+    def forward(self, x):
+
+        x = self.batch_norm1(x)
+        x = self.dropout1(x)
+        x = F.celu(self.dense1(x), alpha=0.06)
+
+        x = x.reshape(x.shape[0],self.cha_1,
+                          self.cha_1_reshape)
+
+        x = self.batch_norm_c1(x)
+        x = self.dropout_c1(x)
+        x = F.relu(self.conv1(x))
+
+        x = self.ave_po_c1(x)
+
+        x = self.batch_norm_c2(x)
+        x = self.dropout_c2(x)
+        x = F.relu(self.conv2(x))
+        x_s = x
+
+        x = self.batch_norm_c2_1(x)
+        x = self.dropout_c2_1(x)
+        x = F.relu(self.conv2_1(x))
+
+        x = self.batch_norm_c2_2(x)
+        x = self.dropout_c2_2(x)
+        x = F.relu(self.conv2_2(x))
+        x =  x * x_s
+
+        x = self.max_po_c2(x)
+
+        x = self.flt(x)
+
+        x = self.batch_norm3(x)
+        x = self.dropout3(x)
+        x = self.dense3(x)
+
+        return x
 
 def load_data():
     print("Loading data...")
@@ -101,8 +190,10 @@ def actual_preprocess_data(data, n_comp):
     print("Finished data pre-processing")
     return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom
 
-def load_model(path):
-    return torch.load(path)
+def load_model(path, num_features, num_targets, hidden_size):
+    model = Model(num_features, num_targets, hidden_size)
+    model.load_state_dict(torch.load(path))
+    return model
 
 class TrainDataset:
     def __init__(self, features, targets):
@@ -152,18 +243,25 @@ def main():
     path_to_model = f'src/model_cnn_lr=1e-5_comp={n_comp}.pth'
     loss_fn = torch.nn.MSELoss().to('cuda')
 
+    # Load data
     data = load_data()
     x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom = actual_preprocess_data(data, n_comp)
-
-    train_dataset = TrainDataset(x_train, y_train)
+    # train_dataset = TrainDataset(x_train, y_train)
     eval_indom_dataset = TrainDataset(x_eval_indom, y_eval_indom)
     eval_outdom_dataset = TrainDataset(x_eval_outdom, y_eval_outdom)
-
     #trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     eval_indom_dataloader = torch.utils.data.DataLoader(eval_indom_dataset, batch_size=BATCH_SIZE, shuffle=False)
     eval_outdom_dataloader = torch.utils.data.DataLoader(eval_outdom_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-    model = load_model(path_to_model)
+    # Define model based on data
+    feature_cols= x_train.columns.values.tolist()
+    target_cols = ['fact_temperature']
+    num_features=len(feature_cols) + n_comp
+    num_targets=len(target_cols)
+    hidden_size=512
+
+    # Load the model
+    model = load_model(path_to_model, num_features, num_targets, hidden_size)
 
     eval_loss_indom, _ = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
     eval_loss_outdom, _ = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
