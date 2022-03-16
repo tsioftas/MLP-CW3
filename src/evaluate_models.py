@@ -262,6 +262,7 @@ def main():
 
     # Load the model
     model = load_model(path_to_model, num_features, num_targets, hidden_size)
+    model.to(DEVICE)
 
     eval_loss_indom, _ = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
     eval_loss_outdom, _ = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
