@@ -272,11 +272,18 @@ def main():
     in_outputs = []
     for data in eval_indom_dataloader:
         inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
-        in_outputs.extend(model(inputs))
+        with torch.no_grad():
+            in_outputs_batch = model(inputs)
+        in_outputs.append(in_outputs_batch.sigmoid().detach().cpu().numpy())
+    np.concatenate(in_outputs)
     out_outputs = []
     for data in eval_outdom_dataloader:
         inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
-        out_outputs.extend(model(inputs))
+        with torch.no_grad():
+            out_outputs_batch = model(inputs)
+        out_outputs.append(out_outputs_batch.sigmoid().detach().cpu().numpy())
+    np.concatenate(out_outputs)
+        
 
     plt.title("In-domain labels and predictions")
     plt.ylabel('fact_temperature')
