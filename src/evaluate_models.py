@@ -277,8 +277,7 @@ def main():
     for data in eval_outdom_dataloader:
         inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
         out_outputs.extend(model(inputs))
-    
-    plt.subplot(2,1,1)
+
     plt.title("In-domain labels and predictions")
     plt.ylabel('fact_temperature')
     plt.xlabel('datapoint-index')
@@ -289,8 +288,10 @@ def main():
     plt.scatter(x, y_labels, c='r', label='Labels')
     plt.scatter(x, y_preds, c='b', label='Predictions')
     plt.legend()
+    plt.savefig('in-domain-scatter.png')
 
-    plt.subplot(2,1,2)
+    plt.clf()
+    
     plt.title("Out-of-domain labels and predictions")
     plt.ylabel('fact_temperature')
     plt.xlabel('datapoint-index')
@@ -301,8 +302,7 @@ def main():
     plt.scatter(x, y_labels, c='r', label='Labels')
     plt.scatter(x, y_preds, c='b', label='Predictions')
     plt.legend()
-
-    plt.show()
+    plt.savefig('out-doman-scatter.png')
 
 
 if __name__ == "__main__":
