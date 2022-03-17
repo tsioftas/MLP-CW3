@@ -4,6 +4,7 @@ from sklearn.decomposition import PCA
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 class Model(nn.Module):
     def __init__(self, num_features, num_targets, hidden_size):
@@ -96,7 +97,7 @@ def load_data():
     print("Loading data...")
 
     input_dir = "data/"
-    train_csv = 'shifts_canonical_train.csv'
+    train_csv = 'shifts_canonical_dev_in.csv'#'shifts_canonical_train.csv'
     val_indom_csv = 'shifts_canonical_dev_in.csv'
     val_outdom_csv = 'shifts_canonical_dev_out.csv'
     eval_indom_csv = 'shifts_canonical_eval_in.csv'
@@ -264,10 +265,45 @@ def main():
     model = load_model(path_to_model, num_features, num_targets, hidden_size)
     model.to(DEVICE)
 
-    eval_loss_indom, _ = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
-    eval_loss_outdom, _ = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
-    print(f"Eval loss indom: {eval_loss_indom}")
-    print(f"Eval loss outdom: {eval_loss_outdom}")
+    # eval_loss_indom, _ = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
+    # eval_loss_outdom, _ = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
+    # print(f"Eval loss indom: {eval_loss_indom}")
+    # print(f"Eval loss outdom: {eval_loss_outdom}")for data in dataloader:
+    in_outputs = []
+    for data in eval_indom_dataloader:
+        inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
+        in_outputs.extend(model(inputs))
+    out_outputs = []
+    for data in eval_outdom_dataloader:
+        inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
+        out_outputs.extend(model(inputs))
+    
+    plt.subplot(2,1,1)
+    plt.title("In-domain labels and predictions")
+    plt.ylabel('fact_temperature')
+    plt.xlabel('datapoint-index')
+    m_in, _ = x_eval_indom.shape
+    x = [i for i in range(m_in)]
+    y_labels = y_eval_indom
+    y_preds = in_outputs
+    plt.scatter(x, y_labels, c='r', label='Labels')
+    plt.scatter(x, y_preds, c='b', label='Predictions')
+    plt.legend()
+
+    plt.subplot(2,1,2)
+    plt.title("Out-of-domain labels and predictions")
+    plt.ylabel('fact_temperature')
+    plt.xlabel('datapoint-index')
+    m_out, _ = x_eval_outdom.shape
+    x = [i for i in range(m_out)]
+    y_labels = y_eval_outdom
+    y_preds = out_outputs
+    plt.scatter(x, y_labels, c='r', label='Labels')
+    plt.scatter(x, y_preds, c='b', label='Predictions')
+    plt.legend()
+
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
