@@ -288,12 +288,14 @@ def main():
     plt.title("In-domain labels and predictions")
     plt.ylabel('fact_temperature')
     plt.xlabel('datapoint-index')
-    m_in, _ = x_eval_indom.shape
-    x = [i for i in range(m_in)]
+    m_in_labels, _ = x_eval_indom.shape
+    x_labels = [i for i in range(m_in_labels)]
     y_labels = y_eval_indom
+    m_in_preds, _ = in_outputs.shape
+    x_preds = [i for i in range(m_in_preds)]
     y_preds = in_outputs
-    plt.scatter(x, y_labels, c='r', label='Labels')
-    plt.scatter(x, y_preds, c='b', label='Predictions')
+    plt.scatter(x_labels, y_labels, c='r', label='Labels')
+    plt.scatter(x_preds, y_preds, c='b', label='Predictions')
     plt.legend()
     plt.savefig('in-domain-scatter.png')
 
@@ -302,12 +304,14 @@ def main():
     plt.title("Out-of-domain labels and predictions")
     plt.ylabel('fact_temperature')
     plt.xlabel('datapoint-index')
-    m_out, _ = x_eval_outdom.shape
-    x = [i for i in range(m_out)]
+    m_out_labels, _ = x_eval_outdom.shape
+    x = [i for i in range(m_out_labels)]
     y_labels = y_eval_outdom
+    m_out_preds, _ = out_outputs.shape
+    x_preds = [i for i in range(m_out_preds)]
     y_preds = out_outputs
-    plt.scatter(x, y_labels, c='r', label='Labels')
-    plt.scatter(x, y_preds, c='b', label='Predictions')
+    plt.scatter(x_labels, y_labels, c='r', label='Labels')
+    plt.scatter(x_preds, y_preds, c='b', label='Predictions')
     plt.legend()
     plt.savefig('out-doman-scatter.png')
 
