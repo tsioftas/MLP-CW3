@@ -239,8 +239,8 @@ def main():
     EARLY_STOPPING_STEPS = 10
     EARLY_STOP = False
     seed = 42
-    n_comp = 22
-    path_to_model = f'src/model_cnn_lr=1e-5_comp={n_comp}.pth'
+    n_comp = 40
+    path_to_model = f'src/model_cnn_deep_lr=1-5_{n_comp}comp.pth'
     loss_fn = torch.nn.MSELoss().to('cuda')
 
     # Load data
