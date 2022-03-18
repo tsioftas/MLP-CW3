@@ -97,7 +97,7 @@ def load_data():
     print("Loading data...")
 
     input_dir = "data/"
-    train_csv = 'shifts_canonical_train.csv'
+    train_csv = 'shifts_canonical_dev_in.csv' # 'shifts_canonical_train.csv'
     val_indom_csv = 'shifts_canonical_dev_in.csv'
     val_outdom_csv = 'shifts_canonical_dev_out.csv'
     eval_indom_csv = 'shifts_canonical_eval_in.csv'
@@ -136,8 +136,16 @@ def preprocess(df):
     
     return df
 
-def preprocess_testData(df):
-    df['fact_temperature'] = (df['fact_temperature'] - df['fact_temperature'].mean()) / df['fact_temperature'].std()
+def preprocess_testData(df, mean=None, std=None):
+    if mean is None:
+        mean = df['fact_temperature'].mean()
+    if std is None:
+        std = df['fact_temperature'].std()
+    df['fact_temperature'] = (df['fact_temperature'] - mean) / std
+    return df, mean, std
+
+def un_normalize(df, mean, std):
+    df = df * std + mean
     return df
 
 def norm_fit(df_1,saveM = True, sc_name = 'zsco'):   
@@ -174,11 +182,11 @@ def actual_preprocess_data(data, n_comp):
     x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom = data
     
     x_train = preprocess(x_train)
-    y_train = preprocess_testData(y_train)
+    y_train, mean_train, std_train = preprocess_testData(y_train)
     x_eval_indom = preprocess(x_eval_indom)
-    y_eval_indom = preprocess_testData(y_eval_indom)
+    y_eval_indom, _, _ = preprocess_testData(y_eval_indom, mean_train, std_train)
     x_eval_outdom = preprocess(x_eval_outdom)
-    y_eval_outdom = preprocess_testData(y_eval_outdom)
+    y_eval_outdom, _, _ = preprocess_testData(y_eval_outdom, mean_train, std_train)
     x_train, ss     = norm_fit(x_train, True, 'quan')
     x_eval_indom  = norm_tra(x_eval_indom, ss)
     x_eval_outdom = norm_tra(x_eval_outdom, ss)
@@ -189,7 +197,7 @@ def actual_preprocess_data(data, n_comp):
     x_eval_indom = pd.concat([x_eval_indom, x_eval_indom_pca],axis = 1)
     x_eval_outdom  = pd.concat([x_eval_outdom, x_eval_outdom_pca],axis = 1)
     print("Finished data pre-processing")
-    return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom
+    return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train
 
 def load_model(path, num_features, num_targets, hidden_size):
     model = Model(num_features, num_targets, hidden_size)
@@ -246,7 +254,7 @@ def main():
 
     # Load data
     data = load_data()
-    x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom = actual_preprocess_data(data, n_comp)
+    x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train = actual_preprocess_data(data, n_comp)
     # train_dataset = TrainDataset(x_train, y_train)
     eval_indom_dataset = TrainDataset(x_eval_indom, y_eval_indom)
     eval_outdom_dataset = TrainDataset(x_eval_outdom, y_eval_outdom)
@@ -265,26 +273,15 @@ def main():
     model = load_model(path_to_model, num_features, num_targets, hidden_size)
     model.to(DEVICE)
 
-    # eval_loss_indom, _ = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
-    # eval_loss_outdom, _ = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
-    # print(f"Eval loss indom: {eval_loss_indom}")
-    # print(f"Eval loss outdom: {eval_loss_outdom}")for data in dataloader:
-    in_outputs = []
-    for data in eval_indom_dataloader:
-        inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
-        with torch.no_grad():
-            in_outputs_batch = model(inputs)
-        in_outputs.append(in_outputs_batch.sigmoid().detach().cpu().numpy())
-    in_outputs = np.concatenate(in_outputs)
-    out_outputs = []
-    for data in eval_outdom_dataloader:
-        inputs, targets = data['x'].to(DEVICE), data['y'].to(DEVICE)
-        with torch.no_grad():
-            out_outputs_batch = model(inputs)
-        out_outputs.append(out_outputs_batch.sigmoid().detach().cpu().numpy())
-    out_outputs = np.concatenate(out_outputs)
+    eval_loss_indom, in_outputs = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
+    # eval_loss_outdom, out_outputs = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
+    print(f"Eval loss indom: {eval_loss_indom}")
+    # print(f"Eval loss outdom: {eval_loss_outdom}")
     
-    marker = '.'
+    in_outputs = un_normalize(in_outputs)
+    # out_outputs = un_normalize(out_outputs)
+
+    marker = ','
 
     plt.title("In-domain labels and predictions")
     plt.ylabel('fact_temperature')
@@ -302,19 +299,19 @@ def main():
 
     plt.clf()
     
-    plt.title("Out-of-domain labels and predictions")
-    plt.ylabel('fact_temperature')
-    plt.xlabel('datapoint-index')
-    m_out_labels, _ = x_eval_outdom.shape
-    x_labels = [i for i in range(m_out_labels)]
-    y_labels = y_eval_outdom
-    m_out_preds = len(out_outputs)
-    x_preds = [i for i in range(m_out_preds)]
-    y_preds = out_outputs
-    plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
-    plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
-    plt.legend()
-    plt.savefig('out-doman-scatter.png')
+    # plt.title("Out-of-domain labels and predictions")
+    # plt.ylabel('fact_temperature')
+    # plt.xlabel('datapoint-index')
+    # m_out_labels, _ = x_eval_outdom.shape
+    # x_labels = [i for i in range(m_out_labels)]
+    # y_labels = y_eval_outdom
+    # m_out_preds = len(out_outputs)
+    # x_preds = [i for i in range(m_out_preds)]
+    # y_preds = out_outputs
+    # plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
+    # plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
+    # plt.legend()
+    # plt.savefig('out-doman-scatter.png')
 
 
 if __name__ == "__main__":
