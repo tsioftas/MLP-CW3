@@ -305,7 +305,7 @@ def main():
     plt.ylabel('fact_temperature')
     plt.xlabel('datapoint-index')
     m_out_labels, _ = x_eval_outdom.shape
-    x = [i for i in range(m_out_labels)]
+    x_labels = [i for i in range(m_out_labels)]
     y_labels = y_eval_outdom
     m_out_preds = len(out_outputs)
     x_preds = [i for i in range(m_out_preds)]
