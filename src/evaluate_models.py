@@ -291,7 +291,7 @@ def main():
     m_in_labels, _ = x_eval_indom.shape
     x_labels = [i for i in range(m_in_labels)]
     y_labels = y_eval_indom
-    m_in_preds, _ = in_outputs.shape
+    m_in_preds = len(in_outputs)
     x_preds = [i for i in range(m_in_preds)]
     y_preds = in_outputs
     plt.scatter(x_labels, y_labels, c='r', label='Labels')
@@ -307,7 +307,7 @@ def main():
     m_out_labels, _ = x_eval_outdom.shape
     x = [i for i in range(m_out_labels)]
     y_labels = y_eval_outdom
-    m_out_preds, _ = out_outputs.shape
+    m_out_preds = len(out_outputs)
     x_preds = [i for i in range(m_out_preds)]
     y_preds = out_outputs
     plt.scatter(x_labels, y_labels, c='r', label='Labels')
