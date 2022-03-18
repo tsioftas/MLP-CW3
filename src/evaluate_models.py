@@ -97,7 +97,7 @@ def load_data():
     print("Loading data...")
 
     input_dir = "data/"
-    train_csv = 'shifts_canonical_dev_in.csv'#'shifts_canonical_train.csv'
+    train_csv = 'shifts_canonical_train.csv'
     val_indom_csv = 'shifts_canonical_dev_in.csv'
     val_outdom_csv = 'shifts_canonical_dev_out.csv'
     eval_indom_csv = 'shifts_canonical_eval_in.csv'
@@ -283,7 +283,8 @@ def main():
             out_outputs_batch = model(inputs)
         out_outputs.append(out_outputs_batch.sigmoid().detach().cpu().numpy())
     out_outputs = np.concatenate(out_outputs)
-        
+    
+    marker = '.'
 
     plt.title("In-domain labels and predictions")
     plt.ylabel('fact_temperature')
@@ -294,8 +295,8 @@ def main():
     m_in_preds = len(in_outputs)
     x_preds = [i for i in range(m_in_preds)]
     y_preds = in_outputs
-    plt.scatter(x_labels, y_labels, c='r', label='Labels')
-    plt.scatter(x_preds, y_preds, c='b', label='Predictions')
+    plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
+    plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
     plt.legend()
     plt.savefig('in-domain-scatter.png')
 
@@ -310,8 +311,8 @@ def main():
     m_out_preds = len(out_outputs)
     x_preds = [i for i in range(m_out_preds)]
     y_preds = out_outputs
-    plt.scatter(x_labels, y_labels, c='r', label='Labels')
-    plt.scatter(x_preds, y_preds, c='b', label='Predictions')
+    plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
+    plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
     plt.legend()
     plt.savefig('out-doman-scatter.png')
 
