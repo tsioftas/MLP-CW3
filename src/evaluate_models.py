@@ -97,7 +97,7 @@ def load_data():
     print("Loading data...")
 
     input_dir = "data/"
-    train_csv = 'shifts_canonical_dev_in.csv' # 'shifts_canonical_train.csv'
+    train_csv = 'shifts_canonical_train.csv'
     val_indom_csv = 'shifts_canonical_dev_in.csv'
     val_outdom_csv = 'shifts_canonical_dev_out.csv'
     eval_indom_csv = 'shifts_canonical_eval_in.csv'
@@ -274,12 +274,12 @@ def main():
     model.to(DEVICE)
 
     eval_loss_indom, in_outputs = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
-    # eval_loss_outdom, out_outputs = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
+    eval_loss_outdom, out_outputs = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
     print(f"Eval loss indom: {eval_loss_indom}")
-    # print(f"Eval loss outdom: {eval_loss_outdom}")
+    print(f"Eval loss outdom: {eval_loss_outdom}")
     
     in_outputs = un_normalize(in_outputs, mean_train, std_train)
-    # out_outputs = un_normalize(out_outputs)
+    out_outputs = un_normalize(out_outputs, mean_train, std_train)
 
     marker = ','
 
@@ -299,19 +299,19 @@ def main():
 
     plt.clf()
     
-    # plt.title("Out-of-domain labels and predictions")
-    # plt.ylabel('fact_temperature')
-    # plt.xlabel('datapoint-index')
-    # m_out_labels, _ = x_eval_outdom.shape
-    # x_labels = [i for i in range(m_out_labels)]
-    # y_labels = y_eval_outdom
-    # m_out_preds = len(out_outputs)
-    # x_preds = [i for i in range(m_out_preds)]
-    # y_preds = out_outputs
-    # plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
-    # plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
-    # plt.legend()
-    # plt.savefig('out-doman-scatter.png')
+    plt.title("Out-of-domain labels and predictions")
+    plt.ylabel('fact_temperature')
+    plt.xlabel('datapoint-index')
+    m_out_labels, _ = x_eval_outdom.shape
+    x_labels = [i for i in range(m_out_labels)]
+    y_labels = y_eval_outdom
+    m_out_preds = len(out_outputs)
+    x_preds = [i for i in range(m_out_preds)]
+    y_preds = out_outputs
+    plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
+    plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
+    plt.legend()
+    plt.savefig('out-doman-scatter.png')
 
 
 if __name__ == "__main__":
