@@ -278,6 +278,8 @@ def main():
     print(f"Eval loss indom: {eval_loss_indom}")
     print(f"Eval loss outdom: {eval_loss_outdom}")
     
+    y_eval_indom = un_normalize(y_eval_indom, mean_train, std_train)
+    y_eval_outdom = un_normalize(y_eval_outdom, mean_train, std_train)
     in_outputs = un_normalize(in_outputs, mean_train, std_train)
     out_outputs = un_normalize(out_outputs, mean_train, std_train)
 
