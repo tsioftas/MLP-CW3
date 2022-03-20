@@ -278,7 +278,7 @@ def main():
     print(f"Eval loss indom: {eval_loss_indom}")
     # print(f"Eval loss outdom: {eval_loss_outdom}")
     
-    in_outputs = un_normalize(in_outputs)
+    in_outputs = un_normalize(in_outputs, mean_train, std_train)
     # out_outputs = un_normalize(out_outputs)
 
     marker = ','
