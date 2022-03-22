@@ -78,7 +78,7 @@ seed_everything(seed=42)
 
 class SimpleCNN(nn.Module):
     def __init__(self, num_features, num_targets, hidden_size):
-        super(Model, self).__init__()
+        super(SimpleCNN, self).__init__()
         cha_1 = 256 // 8
         cha_2 = 512 // 8
         cha_3 = 512 // 8
