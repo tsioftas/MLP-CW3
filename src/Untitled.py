@@ -492,19 +492,19 @@ hidden_size=512
 
 
 x_train = preprocess(x_train)
-y_train = preprocess_testData(y_train)
+#y_train = preprocess_testData(y_train)
 print('4')
 x_valid_inDom = preprocess(x_valid_inDom)
-y_valid_inDom = preprocess_testData(y_valid_inDom)
+#y_valid_inDom = preprocess_testData(y_valid_inDom)
 print('5')
 x_valid_outDom = preprocess(x_valid_outDom)
-y_valid_outDom = preprocess_testData(y_valid_outDom)
+#y_valid_outDom = preprocess_testData(y_valid_outDom)
 print('6')
 x_train,ss     = norm_fit(x_train,True,'quan')
 x_valid_inDom  = norm_tra(x_valid_inDom,ss)
 x_valid_outDom = norm_tra(x_valid_outDom,ss)
 print('7')
-try_different_pca_comb(x_train)
+#try_different_pca_comb(x_train)
 
 pca_feat = [f'pca_-{i}' for i in range(n_comp)]
 
@@ -570,7 +570,7 @@ for epoch in range(EPOCHS):
 
         best_loss = valid_loss_outDom
         oof = valid_preds_outDom
-        torch.save(model.state_dict(), mod_name)
+        torch.save(model, mod_name)
 
     elif(EARLY_STOP == True):
 

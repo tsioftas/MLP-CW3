@@ -181,11 +181,11 @@ def actual_preprocess_data(data, n_comp):
     x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom = data
     
     x_train = preprocess(x_train)
-    y_train, mean_train, std_train = preprocess_testData(y_train)
+    # y_train, mean_train, std_train = preprocess_testData(y_train)
     x_eval_indom = preprocess(x_eval_indom)
-    y_eval_indom, _, _ = preprocess_testData(y_eval_indom, mean_train, std_train)
+    # y_eval_indom, _, _ = preprocess_testData(y_eval_indom, mean_train, std_train)
     x_eval_outdom = preprocess(x_eval_outdom)
-    y_eval_outdom, _, _ = preprocess_testData(y_eval_outdom, mean_train, std_train)
+    # y_eval_outdom, _, _ = preprocess_testData(y_eval_outdom, mean_train, std_train)
     x_train, ss     = norm_fit(x_train, True, 'quan')
     x_eval_indom  = norm_tra(x_eval_indom, ss)
     x_eval_outdom = norm_tra(x_eval_outdom, ss)
@@ -253,7 +253,7 @@ def main():
 
     # Load data
     data = load_data()
-    x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train = actual_preprocess_data(data, n_comp)
+    x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train = (data, n_comp)
     # train_dataset = TrainDataset(x_train, y_train)
     eval_indom_dataset = TrainDataset(x_eval_indom, y_eval_indom)
     eval_outdom_dataset = TrainDataset(x_eval_outdom, y_eval_outdom)
@@ -277,10 +277,10 @@ def main():
     print(f"Eval loss indom: {eval_loss_indom}")
     print(f"Eval loss outdom: {eval_loss_outdom}")
     
-    y_eval_indom = un_normalize(y_eval_indom, mean_train, std_train)
-    y_eval_outdom = un_normalize(y_eval_outdom, mean_train, std_train)
-    in_outputs = un_normalize(in_outputs, mean_train, std_train)
-    out_outputs = un_normalize(out_outputs, mean_train, std_train)
+    # y_eval_indom = un_normalize(y_eval_indom, mean_train, std_train)
+    # y_eval_outdom = un_normalize(y_eval_outdom, mean_train, std_train)
+    # in_outputs = un_normalize(in_outputs, mean_train, std_train)
+    # out_outputs = un_normalize(out_outputs, mean_train, std_train)
 
     marker = '.'
 
