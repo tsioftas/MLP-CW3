@@ -2,3 +2,4 @@
 baseline-models/*
 data/*
 *.pyc
+slurm*.out
