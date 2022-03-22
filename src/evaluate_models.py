@@ -145,8 +145,7 @@ def preprocess_testData(df, mean=None, std=None):
     return df, mean, std
 
 def un_normalize(df, mean, std):
-    df = df * std + mean
-    return df
+    return df * std + mean
 
 def norm_fit(df_1,saveM = True, sc_name = 'zsco'):   
     from sklearn.preprocessing import StandardScaler,MinMaxScaler,MaxAbsScaler,RobustScaler,Normalizer,QuantileTransformer,PowerTransformer
@@ -283,14 +282,21 @@ def main():
     in_outputs = un_normalize(in_outputs, mean_train, std_train)
     out_outputs = un_normalize(out_outputs, mean_train, std_train)
 
-    marker = ','
+    marker = '.'
 
     plt.title("In-domain labels and predictions")
     plt.ylabel('fact_temperature')
     plt.xlabel('datapoint-index')
     m_in_labels, _ = x_eval_indom.shape
+    print(f"In-domain features shape: {x_eval_indom.shape}")
     x_labels = [i for i in range(m_in_labels)]
     y_labels = y_eval_indom
+    try:
+        m_in_preds, _ = in_outputs.shape
+        print(f"In-domain outputs shape: {in_outputs.shape}")
+    except:
+        m_in_preds = len(in_outputs)
+        print(f"In-domain list length: {len(in_outputs)}")
     m_in_preds = len(in_outputs)
     x_preds = [i for i in range(m_in_preds)]
     y_preds = in_outputs
