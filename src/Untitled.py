@@ -79,13 +79,13 @@ seed_everything(seed=42)
 class SimpleCNN(nn.Module):
     def __init__(self, num_features, num_targets, hidden_size):
         super(SimpleCNN, self).__init__()
-        cha_1 = 256 // 8
+        cha_1 = 29 # 256 // 8
         cha_2 = 512 // 8
         cha_3 = 512 // 8
 
-        cha_1_reshape = int(hidden_size/cha_1)
-        cha_po_1 = int(hidden_size/cha_1/2)
-        cha_po_2 = int(hidden_size/cha_1/2/2) * cha_3
+        cha_1_reshape = int(num_features/cha_1)
+        cha_po_1 = int(num_features/cha_1/2)
+        cha_po_2 = int(num_features/cha_1/2/2) * cha_3
 
         self.cha_1 = cha_1
         self.cha_2 = cha_2
