@@ -536,7 +536,7 @@ print('9')
 # In[ ]:
 
 
-model = SimpleCNN(
+model = Model(
             num_features=num_features,
             num_targets=num_targets,
             hidden_size=hidden_size,
