@@ -166,9 +166,9 @@ class SimpleCNN(nn.Module):
 class Model(nn.Module):
     def __init__(self, num_features, num_targets, hidden_size):
         super(Model, self).__init__()
-        cha_1 = 256 // 8
-        cha_2 = 512 // 8
-        cha_3 = 512 // 8
+        cha_1 = 256 // 4
+        cha_2 = 512 // 4
+        cha_3 = 512 // 4
 
         cha_1_reshape = int(hidden_size/cha_1)
         cha_po_1 = int(hidden_size/cha_1/2)
@@ -577,7 +577,7 @@ target_cols = ['fact_temperature']
 num_features=len(feature_cols) + n_comp
 num_targets=len(target_cols)
 #num_targets_0=len(target_nonsc_cols2)
-hidden_size=512
+hidden_size=1024
 
 
 # In[ ]:
