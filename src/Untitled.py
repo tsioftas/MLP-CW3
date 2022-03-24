@@ -578,7 +578,7 @@ target_cols = ['fact_temperature']
 num_features=len(feature_cols) + n_comp
 num_targets=len(target_cols)
 #num_targets_0=len(target_nonsc_cols2)
-hidden_size=512
+hidden_size=1024
 
 
 # In[ ]:
