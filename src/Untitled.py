@@ -563,7 +563,7 @@ print('3')
 
 # HyperParameters
 DEVICE = ('cuda' if torch.cuda.is_available() else 'cpu')
-EPOCHS = 25
+EPOCHS = 15
 BATCH_SIZE = 128
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
@@ -578,7 +578,7 @@ target_cols = ['fact_temperature']
 num_features=len(feature_cols) + n_comp
 num_targets=len(target_cols)
 #num_targets_0=len(target_nonsc_cols2)
-hidden_size=1024
+hidden_size=512
 
 
 # In[ ]:
@@ -635,6 +635,8 @@ model = Model(
             hidden_size=hidden_size,
         )
 model.to('cuda')
+dumb_modname = f"model.pth"
+mod_name = f"model_n_comps{n_comp}_lr{format(LEARNING_RATE, '.2E').replace('-','')}_hs{hidden_size}.pth"
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 scheduler = optim.lr_scheduler.OneCycleLR(optimizer=optimizer, pct_start=0.1, div_factor=1e3, 
@@ -650,7 +652,6 @@ early_step = 0
 oof = np.zeros(len(target_cols))
 best_loss = np.inf
 
-mod_name = f"FOLD_mod11_{seed}.pth"
 print('10')
 for epoch in range(EPOCHS):
 
@@ -663,7 +664,10 @@ for epoch in range(EPOCHS):
 
         best_loss = valid_loss_outDom
         oof = valid_preds_outDom
-        torch.save(model, mod_name)
+        try:
+            torch.save(model, mod_name)
+        except:
+            torch.save(model, dumb_modname)
 
     elif(EARLY_STOP == True):
 
