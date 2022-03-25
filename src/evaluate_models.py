@@ -400,23 +400,22 @@ class TrainDataset:
         }
         return dct
 
-def eval_fn(model, loss_fn, dataloader, device):
+def eval_fn(model, loss_fns, dataloader, device):
     model.eval()
-    final_loss = 0
     valid_preds = []
-
+    final_losses = [0 for i in range(len(loss_fns))]
     for data in dataloader:
         inputs, targets = data['x'].to(device), data['y'].to(device)
         outputs = model(inputs)
-        loss = loss_fn(outputs, targets)
-
-        final_loss += loss.item()
+        for i, loss_fn in enumerate(loss_fns):
+            loss = loss_fn(outputs, targets)
+            final_losses[i] += loss.item()
         valid_preds.append(outputs.sigmoid().detach().cpu().numpy())
 
-    final_loss /= len(dataloader)
+    final_losses = [final_loss / len(dataloader) for final_loss in final_losses]
     valid_preds = np.concatenate(valid_preds)
 
-    return final_loss, valid_preds
+    return final_losses, valid_preds
 
 def main():
     # HyperParameters
@@ -438,7 +437,7 @@ def main():
         # "KaggleCNN.1e-5.1024": "ORGES MUST COMMIT"
         "KaggleCNN.1e-4.1024": ("src/model_22comp_1e-4_1024hs.pth", Model, 1024)
     }
-    loss_fn = torch.nn.MSELoss().to('cuda')
+    loss_fns = [torch.nn.MSELoss().to(DEVICE), torch.nn.L1Loss().to(DEVICE)]
 
     # Load data
     data = load_data(n_comp)
@@ -463,10 +462,10 @@ def main():
         model = load_model(path_to_model, num_features, num_targets, hidden_size, model_type)
         model.to(DEVICE)
 
-        eval_loss_indom, in_outputs = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
-        eval_loss_outdom, out_outputs = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
-        print(f"Eval loss indom: {eval_loss_indom}")
-        print(f"Eval loss outdom: {eval_loss_outdom}\n")
+        eval_loss_indom, in_outputs = eval_fn(model, loss_fns, eval_indom_dataloader, DEVICE)
+        eval_loss_outdom, out_outputs = eval_fn(model, loss_fns, eval_outdom_dataloader, DEVICE)
+        print(f"Eval loss indom (RMSE, MSE, MAE): {np.sqrt(eval_loss_indom[0])}, {eval_loss_indom[0]}, {eval_loss_indom[1]}")
+        print(f"Eval loss outdom (RMSE, MSE, MAE): {np.sqrt(eval_loss_outdom[0])}, {eval_loss_outdom[0]}, {eval_loss_outdom[1]}\n")
 
     # marker = '.'
 
