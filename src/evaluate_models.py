@@ -271,7 +271,7 @@ class Model(nn.Module):
 
         return x
 
-def load_data():
+def load_data(n_comp):
     print("Loading data...")
 
     input_dir = "data/"
@@ -296,7 +296,8 @@ def load_data():
     x_eval_outdom = eval_outdom_df[eval_outdom_df.columns.drop(['climate'] + list(eval_outdom_df.filter(regex='fact_')))].astype(np.float32)
     y_eval_outdom = eval_outdom_df['fact_temperature'].to_frame()
 
-    return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom
+    data = x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom
+    return actual_preprocess_data(data, n_comp)
 
 def preprocess(df):
     # * imputing: the missing values are replaced in all input columns following a simple constant strategy (fill value is −1);
@@ -374,7 +375,7 @@ def actual_preprocess_data(data, n_comp):
     x_eval_indom = pd.concat([x_eval_indom, x_eval_indom_pca],axis = 1)
     x_eval_outdom  = pd.concat([x_eval_outdom, x_eval_outdom_pca],axis = 1)
     print("Finished data pre-processing")
-    return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train
+    return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom
 
 def load_model(path, num_features, num_targets, hidden_size, model_type):
     try:
@@ -428,7 +429,7 @@ def main():
     EARLY_STOPPING_STEPS = 10
     EARLY_STOP = False
     seed = 42
-    n_comp = 40
+    n_comp = 22
     models_dict = {
         "Fully-connected network": ("src/model_FCN.pth", FCNModel, 512),
         "BaselineCNN.1e-5.512": ("src/model_simple_cnn.pth", SimpleCNN, 512),
@@ -440,8 +441,8 @@ def main():
     loss_fn = torch.nn.MSELoss().to('cuda')
 
     # Load data
-    data = load_data()
-    x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train = (data, n_comp)
+    data = load_data(n_comp)
+    x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom = data
     # train_dataset = TrainDataset(x_train, y_train)
     eval_indom_dataset = TrainDataset(x_eval_indom, y_eval_indom)
     eval_outdom_dataset = TrainDataset(x_eval_outdom, y_eval_outdom)
