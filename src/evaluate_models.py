@@ -6,6 +6,184 @@ import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
+class SimpleCNN(nn.Module):
+    def __init__(self, num_features, num_targets, hidden_size):
+        super(SimpleCNN, self).__init__()
+        cha_1 = 29 # 256 // 8
+        cha_2 = 512 // 8
+        cha_3 = 512 // 8
+
+        cha_1_reshape = int(num_features/cha_1)
+        cha_po_1 = int(num_features/cha_1/2)
+        cha_po_2 = int(num_features/cha_1/2/2) * cha_3
+
+        self.cha_1 = cha_1
+        self.cha_2 = cha_2
+        self.cha_3 = cha_3
+        self.cha_1_reshape = cha_1_reshape
+        self.cha_po_1 = cha_po_1
+        self.cha_po_2 = cha_po_2
+
+        # self.batch_norm1 = nn.BatchNorm1d(num_features)
+        # self.dropout1 = nn.Dropout(0.1)
+        # self.dense1 = nn.utils.weight_norm(nn.Linear(num_features, hidden_size))
+
+        # self.batch_norm_c1 = nn.BatchNorm1d(cha_1)
+        # self.dropout_c1 = nn.Dropout(0.1)
+        self.conv1 = nn.utils.weight_norm(nn.Conv1d(cha_1,cha_2, kernel_size = 5, stride = 1, padding=2,  bias=False),dim=None)
+
+        # self.ave_po_c1 = nn.AdaptiveAvgPool1d(output_size = cha_po_1)
+
+        # self.batch_norm_c2 = nn.BatchNorm1d(cha_2)
+        # self.dropout_c2 = nn.Dropout(0.1)
+        self.conv2 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_2, kernel_size = 3, stride = 1, padding=1, bias=True),dim=None)
+
+        # self.batch_norm_c2_1 = nn.BatchNorm1d(cha_2)
+        # self.dropout_c2_1 = nn.Dropout(0.3)
+        self.conv2_1 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_2, kernel_size = 3, stride = 1, padding=1, bias=True),dim=None)
+
+        # self.batch_norm_c2_2 = nn.BatchNorm1d(cha_2)
+        # self.dropout_c2_2 = nn.Dropout(0.2)
+        self.conv2_2 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_3, kernel_size = 5, stride = 1, padding=2, bias=True),dim=None)
+
+        # self.max_po_c2 = nn.MaxPool1d(kernel_size=4, stride=2, padding=1)
+
+        self.flt = nn.Flatten()
+
+        # self.batch_norm3 = nn.BatchNorm1d(cha_po_2)
+        # self.dropout3 = nn.Dropout(0.2)
+        self.dense3 = nn.utils.weight_norm(nn.Linear(cha_po_2, num_targets))
+
+    def forward(self, x):
+
+        # x = self.batch_norm1(x)
+        # x = self.dropout1(x)
+        # x = F.celu(self.dense1(x), alpha=0.06)
+
+        x = x.reshape(x.shape[0],self.cha_1,
+                          self.cha_1_reshape)
+
+        # x = self.batch_norm_c1(x)
+        # x = self.dropout_c1(x)
+        x = F.relu(self.conv1(x))
+
+        # x = self.ave_po_c1(x)
+
+        # x = self.batch_norm_c2(x)
+        # x = self.dropout_c2(x)
+        x = F.relu(self.conv2(x))
+        x_s = x
+
+        # x = self.batch_norm_c2_1(x)
+        # x = self.dropout_c2_1(x)
+        x = F.relu(self.conv2_1(x))
+
+        # x = self.batch_norm_c2_2(x)
+        # x = self.dropout_c2_2(x)
+        x = F.relu(self.conv2_2(x))
+        x =  x * x_s
+
+        # x = self.max_po_c2(x)
+
+        x = self.flt(x)
+
+        # x = self.batch_norm3(x)
+        # x = self.dropout3(x)
+        x = self.dense3(x)
+
+        return x
+
+class FCNModel(nn.Module):
+    def __init__(self, num_features, num_targets, hidden_size):
+        super(FCNModel, self).__init__()
+        cha_1 = 256 // 8
+        cha_2 = 512 // 8
+        cha_3 = 512 // 8
+
+        cha_1_reshape = int(hidden_size/cha_1)
+        cha_po_1 = int(hidden_size/cha_1/2)
+        cha_po_2 = int(hidden_size/cha_1/2/2) * cha_3
+
+        self.cha_1 = cha_1
+        self.cha_2 = cha_2
+        self.cha_3 = cha_3
+        self.cha_1_reshape = cha_1_reshape
+        self.cha_po_1 = cha_po_1
+        self.cha_po_2 = cha_po_2
+
+        #self.batch_norm1 = nn.BatchNorm1d(num_features)
+        #self.dropout1 = nn.Dropout(0.1)
+        self.dense1 = nn.utils.weight_norm(nn.Linear(num_features, hidden_size))
+
+        s#elf.batch_norm_c1 = nn.BatchNorm1d(cha_1)
+        #self.dropout_c1 = nn.Dropout(0.1)
+        #self.conv1 = nn.utils.weight_norm(nn.Conv1d(cha_1,cha_2, kernel_size = 5, stride = 1, padding=2,  bias=False),dim=None)
+        self.dense2 = nn.utils.weight_norm(nn.Linear(hidden_size, hidden_size))
+
+        #self.ave_po_c1 = nn.AdaptiveAvgPool1d(output_size = cha_po_1)
+
+        #self.batch_norm_c2 = nn.BatchNorm1d(cha_2)
+        #self.dropout_c2 = nn.Dropout(0.1)
+        #self.conv2 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_2, kernel_size = 3, stride = 1, padding=1, bias=True),dim=None)
+        self.dense3 = nn.utils.weight_norm(nn.Linear(hidden_size, hidden_size))
+
+        #self.batch_norm_c2_1 = nn.BatchNorm1d(cha_2)
+        #self.dropout_c2_1 = nn.Dropout(0.3)
+        #self.conv2_1 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_2, kernel_size = 3, stride = 1, padding=1, bias=True),dim=None)
+        self.dense4 = nn.utils.weight_norm(nn.Linear(hidden_size, hidden_size))
+
+
+        #self.batch_norm_c2_2 = nn.BatchNorm1d(cha_2)
+        #self.dropout_c2_2 = nn.Dropout(0.2)
+        #self.conv2_2 = nn.utils.weight_norm(nn.Conv1d(cha_2,cha_3, kernel_size = 5, stride = 1, padding=2, bias=True),dim=None)
+
+        #self.max_po_c2 = nn.MaxPool1d(kernel_size=4, stride=2, padding=1)
+
+        #self.flt = nn.Flatten()
+
+        #self.batch_norm3 = nn.BatchNorm1d(cha_po_2)
+        #self.dropout3 = nn.Dropout(0.2)
+        self.dense5 = nn.utils.weight_norm(nn.Linear(hidden_size, num_targets))
+
+    def forward(self, x):
+
+        #x = self.batch_norm1(x)
+        #x = self.dropout1(x)
+        x = F.celu(self.dense1(x), alpha=0.06)
+
+        #x = x.reshape(x.shape[0],self.cha_1,
+         #                 self.cha_1_reshape)
+
+        #x = self.batch_norm_c1(x)
+        #x = self.dropout_c1(x)
+        x = F.relu(self.dense2(x))
+
+        #x = self.ave_po_c1(x)
+
+        #x = self.batch_norm_c2(x)
+        #x = self.dropout_c2(x)
+        x = F.relu(self.dense3(x))
+        #x_s = x
+
+        #x = self.batch_norm_c2_1(x)
+        #x = self.dropout_c2_1(x)
+        x = F.relu(self.dense4(x))
+
+        #x = self.batch_norm_c2_2(x)
+        #x = self.dropout_c2_2(x)
+        #x = F.relu(self.conv2_2(x))
+        #x =  x * x_s
+
+        #x = self.max_po_c2(x)
+
+        #x = self.flt(x)
+
+        #x = self.batch_norm3(x)
+        #x = self.dropout3(x)
+        x = self.dense5(x)
+
+        return x
+
 class Model(nn.Module):
     def __init__(self, num_features, num_targets, hidden_size):
         super(Model, self).__init__()
@@ -198,9 +376,12 @@ def actual_preprocess_data(data, n_comp):
     print("Finished data pre-processing")
     return x_train, y_train, x_eval_indom, y_eval_indom, x_eval_outdom, y_eval_outdom, mean_train, std_train
 
-def load_model(path, num_features, num_targets, hidden_size):
-    model = Model(num_features, num_targets, hidden_size)
-    model.load_state_dict(torch.load(path))
+def load_model(path, num_features, num_targets, hidden_size, model_type):
+    try:
+        model = torch.load(path)
+    except:
+        model = model_type(num_features, num_targets, hidden_size)
+        model.load_state_dict(torch.load(path))
     return model
 
 class TrainDataset:
@@ -248,7 +429,14 @@ def main():
     EARLY_STOP = False
     seed = 42
     n_comp = 40
-    path_to_model = f'src/model_cnn_deep_lr=1-5_{n_comp}comp.pth'
+    models_dict = {
+        "Fully-connected network": ("src/model_FCN.pth", FCNModel, 512),
+        "BaselineCNN.1e-5.512": ("src/model_simple_cnn.pth", SimpleCNN, 512),
+        "KaggleCNN.1e-4.512": ("src/model_flagship_22comps.pth", Model, 512),
+        # "KaggleCnn.1e-4.512": "NOT READY",
+        # "KaggleCNN.1e-5.1024": "ORGES MUST COMMIT"
+        "KaggleCNN.1e-4.1024": ("src/model_22comp_1e-4_1024hs.pth", Model, 1024)
+    }
     loss_fn = torch.nn.MSELoss().to('cuda')
 
     # Load data
@@ -266,60 +454,57 @@ def main():
     target_cols = ['fact_temperature']
     num_features=len(feature_cols)  
     num_targets=len(target_cols)
-    hidden_size=512
 
-    # Load the model
-    model = load_model(path_to_model, num_features, num_targets, hidden_size)
-    model.to(DEVICE)
+    for label, item in models_dict.items():
+        print(f"Evaluating model \"{label}\"...")
+        path_to_model, model_type, hidden_size = item
+        # Load the model
+        model = load_model(path_to_model, num_features, num_targets, hidden_size, model_type)
+        model.to(DEVICE)
 
-    eval_loss_indom, in_outputs = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
-    eval_loss_outdom, out_outputs = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
-    print(f"Eval loss indom: {eval_loss_indom}")
-    print(f"Eval loss outdom: {eval_loss_outdom}")
+        eval_loss_indom, in_outputs = eval_fn(model, loss_fn, eval_indom_dataloader, DEVICE)
+        eval_loss_outdom, out_outputs = eval_fn(model, loss_fn, eval_outdom_dataloader, DEVICE)
+        print(f"Eval loss indom: {eval_loss_indom}")
+        print(f"Eval loss outdom: {eval_loss_outdom}\n")
+
+    # marker = '.'
+
+    # plt.title("In-domain labels and predictions")
+    # plt.ylabel('fact_temperature')
+    # plt.xlabel('datapoint-index')
+    # m_in_labels, _ = x_eval_indom.shape
+    # print(f"In-domain features shape: {x_eval_indom.shape}")
+    # x_labels = [i for i in range(m_in_labels)]
+    # y_labels = y_eval_indom
+    # try:
+    #     m_in_preds, _ = in_outputs.shape
+    #     print(f"In-domain outputs shape: {in_outputs.shape}")
+    # except:
+    #     m_in_preds = len(in_outputs)
+    #     print(f"In-domain list length: {len(in_outputs)}")
+    # m_in_preds = len(in_outputs)
+    # x_preds = [i for i in range(m_in_preds)]
+    # y_preds = in_outputs
+    # plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
+    # plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
+    # plt.legend()
+    # plt.savefig('in-domain-scatter.png')
+
+    # plt.clf()
     
-    # y_eval_indom = un_normalize(y_eval_indom, mean_train, std_train)
-    # y_eval_outdom = un_normalize(y_eval_outdom, mean_train, std_train)
-    # in_outputs = un_normalize(in_outputs, mean_train, std_train)
-    # out_outputs = un_normalize(out_outputs, mean_train, std_train)
-
-    marker = '.'
-
-    plt.title("In-domain labels and predictions")
-    plt.ylabel('fact_temperature')
-    plt.xlabel('datapoint-index')
-    m_in_labels, _ = x_eval_indom.shape
-    print(f"In-domain features shape: {x_eval_indom.shape}")
-    x_labels = [i for i in range(m_in_labels)]
-    y_labels = y_eval_indom
-    try:
-        m_in_preds, _ = in_outputs.shape
-        print(f"In-domain outputs shape: {in_outputs.shape}")
-    except:
-        m_in_preds = len(in_outputs)
-        print(f"In-domain list length: {len(in_outputs)}")
-    m_in_preds = len(in_outputs)
-    x_preds = [i for i in range(m_in_preds)]
-    y_preds = in_outputs
-    plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
-    plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
-    plt.legend()
-    plt.savefig('in-domain-scatter.png')
-
-    plt.clf()
-    
-    plt.title("Out-of-domain labels and predictions")
-    plt.ylabel('fact_temperature')
-    plt.xlabel('datapoint-index')
-    m_out_labels, _ = x_eval_outdom.shape
-    x_labels = [i for i in range(m_out_labels)]
-    y_labels = y_eval_outdom
-    m_out_preds = len(out_outputs)
-    x_preds = [i for i in range(m_out_preds)]
-    y_preds = out_outputs
-    plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
-    plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
-    plt.legend()
-    plt.savefig('out-doman-scatter.png')
+    # plt.title("Out-of-domain labels and predictions")
+    # plt.ylabel('fact_temperature')
+    # plt.xlabel('datapoint-index')
+    # m_out_labels, _ = x_eval_outdom.shape
+    # x_labels = [i for i in range(m_out_labels)]
+    # y_labels = y_eval_outdom
+    # m_out_preds = len(out_outputs)
+    # x_preds = [i for i in range(m_out_preds)]
+    # y_preds = out_outputs
+    # plt.scatter(x_labels, y_labels, c='r', label='Labels', marker=marker)
+    # plt.scatter(x_preds, y_preds, c='b', label='Predictions', marker=marker)
+    # plt.legend()
+    # plt.savefig('out-doman-scatter.png')
 
 
 if __name__ == "__main__":
