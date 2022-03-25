@@ -430,12 +430,12 @@ def main():
     seed = 42
     n_comp = 22
     models_dict = {
-        "Fully-connected network": ("src/model_FCN.pth", FCNModel, 512),
-        "BaselineCNN.1e-5.512": ("src/model_simple_cnn.pth", SimpleCNN, 512),
-        "KaggleCNN.1e-4.512": ("src/model_flagship_22comps.pth", Model, 512),
-        # "KaggleCnn.1e-4.512": "NOT READY",
-        # "KaggleCNN.1e-5.1024": "ORGES MUST COMMIT"
-        "KaggleCNN.1e-4.1024": ("src/model_22comp_1e-4_1024hs.pth", Model, 1024)
+        # "Fully-connected network": ("src/model_FCN.pth", FCNModel, 512),
+        # "BaselineCNN.1e-5.512": ("src/model_simple_cnn.pth", SimpleCNN, 512),
+        # "KaggleCNN.1e-4.512": ("src/model_flagship_22comps.pth", Model, 512),
+        "KaggleCnn.1e-4.512": ("src/model_n_comps22_lr1.00E04_hs512.pth", Model, 512),
+        "KaggleCNN.1e-5.1024": ("src/cnn_hs1024_lr1e5.pth", Model, 1024)
+        #"KaggleCNN.1e-4.1024": ("src/model_22comp_1e-4_1024hs.pth", Model, 1024)
     }
     loss_fns = [torch.nn.MSELoss().to(DEVICE), torch.nn.L1Loss().to(DEVICE)]
 
