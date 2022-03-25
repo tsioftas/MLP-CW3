@@ -166,9 +166,10 @@ class SimpleCNN(nn.Module):
 class Model(nn.Module):
     def __init__(self, num_features, num_targets, hidden_size):
         super(Model, self).__init__()
-        cha_1 = 256 // 4
-        cha_2 = 512 // 4
-        cha_3 = 512 // 4
+        d = 8
+        cha_1 = 256 // d
+        cha_2 = 512 // d
+        cha_3 = 512 // d
 
         cha_1_reshape = int(hidden_size/cha_1)
         cha_po_1 = int(hidden_size/cha_1/2)
@@ -564,7 +565,7 @@ print('3')
 DEVICE = ('cuda' if torch.cuda.is_available() else 'cpu')
 EPOCHS = 25
 BATCH_SIZE = 128
-LEARNING_RATE = 1e-5
+LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-5
 NFOLDS = 5
 EARLY_STOPPING_STEPS = 10
@@ -637,7 +638,7 @@ model.to('cuda')
 
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 scheduler = optim.lr_scheduler.OneCycleLR(optimizer=optimizer, pct_start=0.1, div_factor=1e3, 
-                                                  max_lr=1e-5, epochs=EPOCHS, steps_per_epoch=len(trainloader))
+                                                  max_lr=1e-4, epochs=EPOCHS, steps_per_epoch=len(trainloader))
 
 loss_tr = nn.MSELoss().to('cuda') #SmoothBCEwLogits(smoothing = 0.001)
 loss_va_inDom = nn.MSELoss().to('cuda') #nn.BCEWithLogitsLoss()
